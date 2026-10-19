@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 import json
+import os
+import shlex
+import shutil
+import subprocess
 import tomllib
+from pathlib import Path
 from typing import Annotated, Any
 
-import click
 import tomlkit
 import typer
 
@@ -61,6 +65,16 @@ def coerce_and_validate(key: str, raw: str) -> Any:
         if value not in templates:
             raise typer.BadParameter(f"{key} must be one of: {', '.join(sorted(templates))}")
     return value
+
+
+def open_editor(path: Path) -> None:
+    """Open `path` in $VISUAL / $EDITOR (nano or vi as a fallback) and wait for it to close."""
+    command = os.environ.get("VISUAL") or os.environ.get("EDITOR")
+    if not command:
+        command = next((name for name in ("nano", "vi") if shutil.which(name)), None)
+    if not command:
+        raise typer.BadParameter("No editor found. Set $EDITOR, e.g. export EDITOR=nano")
+    subprocess.run([*shlex.split(command), str(path)], check=False)
 
 
 def _ensure_file() -> None:
@@ -119,7 +133,7 @@ def edit() -> None:
     """Open the config in $VISUAL / $EDITOR, then check it."""
     _ensure_file()
     target = cfg.config_path()
-    click.edit(filename=str(target))
+    open_editor(target)
     try:
         data = tomllib.loads(target.read_text(encoding="utf-8"))
     except tomllib.TOMLDecodeError as exc:

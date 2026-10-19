@@ -190,10 +190,10 @@ def test_config_path(config_home: Path) -> None:
 def test_config_edit_validates_the_result(
     config_home: Path, monkeypatch: pytest.MonkeyPatch, content: str, expected_exit: int
 ) -> None:
-    def fake_edit(filename: str) -> None:
-        Path(filename).write_text(content, encoding="utf-8")
+    def fake_edit(path: Path) -> None:
+        path.write_text(content, encoding="utf-8")
 
-    monkeypatch.setattr("kickoff.commands.config_cmd.click.edit", fake_edit)
+    monkeypatch.setattr("kickoff.commands.config_cmd.open_editor", fake_edit)
     result = runner.invoke(app, ["config", "edit"])
     assert result.exit_code == expected_exit
 

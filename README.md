@@ -5,7 +5,7 @@ Pytest, pre-commit, pip-audit, GitHub Actions workflows (CI + weekly security au
 a `LICENSE`, README badges, OpenCode agent files (`AGENTS.md` + skills) and, optionally, a GitHub
 repository, all configured the same way every time.
 
-> **Status:** v0.4.0. Templates: `default`, `django`, `jupyter` and your own
+> **Status:** v0.4.1. Templates: `default`, `django`, `jupyter` and your own
 > ([custom templates](#custom-templates)). Optional features: Prefect, dbt, Docker with PostgreSQL /
 > PostGIS, pgAdmin, Redis, an S3 store, Mailpit and Traefik routing. Add features later with
 > [`kickoff add`](#kickoff-add).
