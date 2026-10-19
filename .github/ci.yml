@@ -1,0 +1,66 @@
+name: ci
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    # Dispatch runs exist to produce the Windows artifact; they must not also
+    # re-pay for the full matrix. A tag deletion is a push event with an
+    # all-zero SHA that would fail at checkout, so it is excluded too.
+    if: github.event_name != 'workflow_dispatch' && github.event.deleted != true
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --all-groups
+
+      - name: Ruff lint
+        run: uv run ruff check .
+
+      - name: Ruff format
+        run: uv run ruff format --check .
+
+      - name: Type check
+        run: uv run ty check src tests
+
+      - name: Dead code
+        run: uv run vulture src tests --min-confidence 80
+
+      - name: Tests
+        run: uv run pytest -q -m "not integration" --cov --cov-report=xml
+
+      - name: Integration tests
+        # Needs tile servers, so a flaky provider must not turn the build red.
+        continue-on-error: true
+        run: uv run pytest -q -m integration
+
+      - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.12'
+        uses: codecov/codecov-action@v7
+        with:
+          files: ./coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
